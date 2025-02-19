@@ -1,0 +1,98 @@
+specification {
+    element person {
+        style {
+            shape person
+            color green
+        }
+    }
+    element softwareSystem
+    element container
+    element component
+}
+
+model {
+  user = person "Пользователь" "Пользователь социальной сети"
+
+  socialNetwork = softwareSystem "Социальная сеть" {
+    apiGateway = container "API Gateway" {
+      description "Принимает запросы от UI и маршрутизирует их"
+      technology "Go (Fiber)"
+    }
+
+    userService = container "User Service" {
+      description "Управление пользователями и аутентификация"
+      technology "Python (FastAPI)"
+      
+      component userController "User Controller" "Обрабатывает HTTP запросы"
+      component authService "Auth Service" "Управляет аутентификацией"
+      component userRepository "User Repository" "Доступ к данным пользователей"
+    }
+
+    postService = container "Post Service" {
+      description "Создание, обновление, удаление постов и комментариев"
+      technology "C++ (gRPC)"
+    }
+
+    analyticsService = container "Analytics Service" {
+      description "Подсчет лайков, просмотров, комментариев"
+      technology "C++ (ClickHouse)"
+      
+      component statsAPI "Stats API" "Предоставляет статистику через REST API"
+    }
+
+    postgresUsers = container "PostgreSQL" {
+      description "Хранение данных пользователей"
+      technology "Database"
+      style {
+        shape cylinder
+      }
+    }
+
+    postgresPosts = container "PostgreSQL" {
+      description "Хранение постов и комментариев"
+      technology "Database"
+    }
+
+    clickhouse = container "ClickHouse" {
+      description "Хранение аналитических данных"
+      technology "Database"
+      style {
+        shape cylinder
+      }
+    }
+
+    kafka = container "Kafka" {
+      description "Обмен событиями между сервисами"
+      technology "Message Broker"
+      style {
+        shape queue
+      }
+    }
+  }
+
+  user -> socialNetwork.apiGateway "Использует" "HTTPS"
+  socialNetwork.apiGateway -> socialNetwork.userService "Запросы аутентификации и регистрации" "JSON/HTTPS"
+  socialNetwork.apiGateway -> socialNetwork.postService "Запросы управления постами" "JSON/HTTPS"
+  socialNetwork.apiGateway -> socialNetwork.analyticsService.statsAPI "Запросы статистики" "JSON/HTTPS"
+
+  socialNetwork.userService -> socialNetwork.postgresUsers "Читает/Пишет" "SQL"
+  socialNetwork.postService -> socialNetwork.postgresPosts "Читает/Пишет" "SQL"
+  socialNetwork.analyticsService -> socialNetwork.clickhouse "Читает/Пишет" "CQL"
+
+  socialNetwork.userService -> socialNetwork.kafka "Публикует события пользователей" "user_events"
+  socialNetwork.postService -> socialNetwork.kafka "Публикует события постов" "post_events"
+  socialNetwork.apiGateway -> socialNetwork.kafka "Публикует события взаимодействий" "interaction_events"
+  socialNetwork.analyticsService -> socialNetwork.kafka "Подписывается на события" "user_events, post_events, interaction_events"
+
+  socialNetwork.analyticsService.statsAPI -> socialNetwork.apiGateway "Предоставляет статистику" "JSON/HTTPS"
+  
+  socialNetwork.userService.userController -> socialNetwork.userService.authService "Использует"
+  socialNetwork.userService.authService -> socialNetwork.userService.userRepository "Использует"
+}
+
+views {
+   view index {
+        include *
+    }
+}
+
