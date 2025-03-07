@@ -1,0 +1,93 @@
+openapi: 3.0.0
+info:
+  title: User Authentication API
+  description: API для регистрации, аутентификации и управления пользователями.
+  version: 1.0.0
+
+paths:
+  /register/:
+    post:
+      summary: Регистрация нового пользователя
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        "200":
+          description: Пользователь успешно зарегистрирован
+        "400":
+          description: Ошибка (например, логин уже занят)
+
+  /login/:
+    post:
+      summary: Аутентификация пользователя
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        "200":
+          description: Возвращает JWT-токен
+        "400":
+          description: Ошибка (неверные данные)
+
+  /update/:
+    put:
+      summary: Обновление профиля пользователя
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                first_name:
+                  type: string
+                last_name:
+                  type: string
+                birth_date:
+                  type: string
+                phone:
+                  type: string
+      responses:
+        "200":
+          description: Профиль обновлен
+        "401":
+          description: Требуется авторизация
+
+  /profile/:
+    get:
+      summary: Получение данных профиля
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Данные профиля пользователя
+        "401":
+          description: Требуется авторизация
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
