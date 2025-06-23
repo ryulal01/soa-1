@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+package analytics;
+
+service AnalyticsService {
+  rpc GetPostStats (PostIdRequest) returns (PostStatsResponse);
+  rpc GetPostViewsDynamics (PostIdRequest) returns (DynamicsResponse);
+  rpc GetPostLikesDynamics (PostIdRequest) returns (DynamicsResponse);
+  rpc GetPostCommentsDynamics (PostIdRequest) returns (DynamicsResponse);
+  rpc GetTopPosts (TopRequest) returns (TopPostsResponse);
+  rpc GetTopUsers (TopRequest) returns (TopUsersResponse);
+}
+
+message PostIdRequest {
+  string post_id = 1;
+}
+
+message TopRequest {
+  enum StatType {
+    VIEWS = 0;
+    LIKES = 1;
+    COMMENTS = 2;
+  }
+  StatType stat_type = 1;
+}
+
+message PostStatsResponse {
+  string post_id = 1;
+  int64 views = 2;
+  int64 likes = 3;
+  int64 comments = 4;
+}
+
+message DynamicsItem {
+  string date = 1; 
+  int64 count = 2;
+}
+
+message DynamicsResponse {
+  repeated DynamicsItem items = 1;
+}
+
+message TopPostsResponse {
+  message PostInfo {
+    string post_id = 1;
+    int64 count = 2;
+  }
+  repeated PostInfo posts = 1;
+}
+
+message TopUsersResponse {
+  message UserInfo {
+    string user_id = 1;
+    int64 count = 2;
+  }
+  repeated UserInfo users = 1;
+}
+

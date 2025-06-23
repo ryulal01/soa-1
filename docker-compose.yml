@@ -8,6 +8,7 @@ services:
 
   kafka:
     image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka
     ports:
       - "9092:9092"
     depends_on:
@@ -64,6 +65,34 @@ services:
     ports:
       - "5432:5432"
 
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    container_name: clickhouse
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    environment:
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: default_password
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+
+  analytics_service:
+    build: ./analytics_service
+    container_name: analytics_service
+    depends_on:
+      - kafka
+      - clickhouse
+    ports:
+      - "50052:50052"
+    environment:
+      CLICKHOUSE_HOST: clickhouse
+      CLICKHOUSE_PORT: 9000
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: default_password
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
 volumes:
   postgres_data:
+  clickhouse_data:
 
