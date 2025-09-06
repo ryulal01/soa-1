@@ -1,0 +1,98 @@
+version: "3.8"
+
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    ports:
+      - "8080:8080"
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=local
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
+
+  api_gateway:
+    build: ./api_gateway
+    container_name: api_gateway
+    restart: always
+    depends_on:
+      - user_service
+    ports:
+      - "8000:8000"
+
+  user_service:
+    build: ./user_service
+    container_name: user_service
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgresql://user:password@db/users_db
+    ports:
+      - "8001:8000"
+
+  post_service:
+    build: ./post_service
+    container_name: post_service
+    depends_on:
+      - kafka
+    ports:
+      - "50051:50051"
+
+  db:
+    image: postgres:15
+    container_name: postgres_db
+    restart: always
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: users_db
+    ports:
+      - "5432:5432"
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    container_name: clickhouse
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    environment:
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: default_password
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+
+  analytics_service:
+    build: ./analytics_service
+    container_name: analytics_service
+    depends_on:
+      - kafka
+      - clickhouse
+    ports:
+      - "50052:50052"
+    environment:
+      CLICKHOUSE_HOST: clickhouse
+      CLICKHOUSE_PORT: 9000
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: default_password
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
+volumes:
+  postgres_data:
+  clickhouse_data:
+
